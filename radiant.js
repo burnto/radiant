@@ -1,12 +1,16 @@
-
 const queryString = require('query-string');
-const queryParams = queryString.parse(location.search, { parseNumbers: true, parseBooleans: true });
 
+const duration = 3;
+const fps = 30;
+
+const queryParams = queryString.parse(location.search, { parseNumbers: true, parseBooleans: true });
 let params = Object.assign({}, {
   numRays: 6,
   numPoints: 6,
   color: "#669999",
   strokeWeight: 1.0,
+  gif: false,
+  open: true,
 }, queryParams);
 console.log(params);
 
@@ -14,8 +18,6 @@ const sketch = (p) => {
   p.canvasSide = () => {
     return Math.min(600, Math.min(p.windowWidth, p.windowHeight));
   }
-
-  const duration = 10;
 
   const mutateParams = () => {
     let choice = Math.random();
@@ -60,22 +62,34 @@ const sketch = (p) => {
 
 
     let gif;
+    console.log("download", params.download);
     if (params.gif) {
-      console.log("gif enabled");
+      const open = !params.download;
+      console.log(`gif enabled, will be ${open ? 'opened in tab' : 'downloaded'}`);
       gif = {
-        options: { quality: 1 },
+        options: { quality: 9 },
         fileName: "bloc-out.gif",
         startLoop: 1,
-        endLoop: 2,
+        endLoop: 3,
         download: params.download,
-        open: params.open,
+        open,
       };
     }
-    p.frameRate(30);
+    p.frameRate(fps);
     p.createLoop({
       gif,
       duration,
     });
+    // console.log(p.animLoop.onPostRender);
+
+    // p.animLoop.onPreRender.addListener(x => {
+    //   console.log("prerender")
+    // })
+    // p.animLoop.onPostRender.addListener(x => {
+    // console.log("postrender")
+    // })
+    console.log(p.animLoop);
+
     printParams();
   }
 
