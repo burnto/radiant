@@ -1,18 +1,44 @@
 
-function hashContains(s) {
-  return !!window.location.hash.match(s);
-}
+const queryString = require('query-string');
+const queryParams = queryString.parse(location.search, { parseNumbers: true, parseBooleans: true });
+
+let params = Object.assign({}, {
+  numRays: 6,
+  numPoints: 6,
+  color: "#669999",
+  strokeWeight: 1.0,
+}, queryParams);
+console.log(params);
 
 const sketch = (p) => {
   p.canvasSide = () => {
-    return Math.min(p.windowWidth, p.windowHeight);
+    return Math.min(600, Math.min(p.windowWidth, p.windowHeight));
   }
 
-  let params = {
-    numRays: 24,
-    numPoints: 24,
-    duration: 5,
+  const duration = 10;
 
+  const mutateParams = () => {
+    let choice = Math.random();
+    if (choice > 0.75) {
+      params.numRays += 1;
+    } else if (choice > 0.5) {
+      params.numPoints += 2
+    } else if (choice > 0.25) {
+      params.strokeWeight = params.strokeWeight * 0.9;
+    } else {
+      if (!params.color.startsWith("#")) {
+        params.color = `#${params.color}`
+      }
+      let color = p.color(params.color);
+      let m = Math.random() > 0.1 ? -20 : 20;
+      let i = Math.floor(Math.random() * 4);
+      let levels = color.levels;
+      levels[i] = Math.max(0, Math.min(255, levels[i] + m));
+      console.log(levels);
+      params.color = p.color(...levels).toString("#rrggbb")
+
+    }
+    printParams();
   }
 
   let outputEl;
@@ -23,57 +49,63 @@ const sketch = (p) => {
   p.setup = () => {
     p.createCanvas(p.canvasSide(), p.canvasSide())
     p.background(255);
-    // p.colorMode(p.HSB, 1, 1, 1, 1)
+    p.noFill();
 
     outputEl = p.createP();
     outputEl.style('font-family', 'monospace');
     outputEl.style('white-space', 'pre');
 
+    let b = p.createButton('mutate');
+    b.mousePressed(mutateParams);
+
+
     let gif;
-    if (hashContains("gif")) {
+    if (params.gif) {
       console.log("gif enabled");
       gif = {
         options: { quality: 1 },
         fileName: "bloc-out.gif",
         startLoop: 1,
         endLoop: 2,
-        download: hashContains("download"),
-        open: hashContains("open"),
+        download: params.download,
+        open: params.open,
       };
     }
     p.frameRate(30);
     p.createLoop({
       gif,
-      duration: params.duration,
+      duration,
     });
+    printParams();
   }
 
 
   p.draw = () => {
+    let m = 0.75 + Math.sin(p.animLoop.theta) / 8;
     const w = p.width;
     const h = p.height;
     p.background(255);
     for (let i = 0; i < params.numPoints; i++) {
       const th = (i * Math.PI * 2) / params.numPoints;
-      const x = w / 2 + (3 * (Math.sin(th) * w)) / 4;
-      const y = h / 2 + (3 * (Math.cos(th) * h)) / 4;
+      const x = w / 2 + (Math.sin(th) * w) * .5;
+      const y = h / 2 + (Math.cos(th) * h) * .5;
+
 
       p.push();
       p.translate(x, y);
       for (let j = 0; j < params.numRays; j++) {
         const th2 =
           p.animLoop.theta / (params.numRays) + (2 * Math.PI * j) / params.numRays;
-        // const color = p.color(((p.animLoop.progress) + j / params.numRays) / 2, 0.3, 0.9);
-        const color = p.color(0.5, 0.5, 0.9);
-        p.stroke(0);
-        p.strokeWeight(2);
+        // const color = p.color(0.5, 0.5, 0.9);
+        const color = p.color(params.color);
+        p.stroke(color);
+        p.strokeWeight(0.7);
         p.push();
         p.rotate(th2);
-        // for (let lp = 0; lp < p.width * 2; lp += 20) {
-        //   p.point(lp, 0);
-        // }
-        p.line(0, 0, 1000, 100)
-        p.line(0, 0, 1000, -100)
+        for (var i2 = 0; i2 < 1000; i2 += 10) {
+          p.line(i2 * m, 20, i2 * m, -20);
+          // i2 += m;
+        }
         p.pop();
       }
       p.pop();
