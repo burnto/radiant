@@ -18,5 +18,8 @@
   "homepage": "https://github.com/burnto/radiant#readme",
   "devDependencies": {
     "parcel-bundler": "^1.12.5"
+  },
+  "dependencies": {
+    "p5": "^1.4.0"
   }
 }
